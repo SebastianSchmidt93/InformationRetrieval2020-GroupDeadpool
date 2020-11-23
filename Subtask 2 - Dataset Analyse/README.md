@@ -1,4 +1,4 @@
-##Prolems and solutions:
+##Problems and solutions:
 * JSONs are humongous - how do we process them?
     * Use IJSON python package. It processes in chunks.
 * Which parts of the argument do we use?
@@ -13,5 +13,7 @@
     * Use NLTKs built-in stop words.
 * Special characters are interpreted as words (e.g. ",", "...", "?").
     * Remove all "words" that do not contain a digit or letter.
+* Some sentences are badly formatted resulting in words like "there.I".
+    * Split words, that are of form "^\w+\.\w+$".
 * Abbreviations (e.g. "n't") are interpreted as unique words.
     * See them as regular form of the word (e.g. "shop" and "shops") and thus keep them.
