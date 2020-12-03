@@ -17,3 +17,6 @@
     * Split words, that are of form "^\w+\.\w+$".
 * Abbreviations (e.g. "n't") are interpreted as unique words.
     * See them as regular form of the word (e.g. "shop" and "shops") and thus keep them.
+    
+##Open problems
+* Many words make no sense and/or contain mostly special characters.
