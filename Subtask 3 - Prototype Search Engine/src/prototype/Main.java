@@ -119,7 +119,7 @@ public class Main
 			}
 		}
 		
-		System.out.println("Touché Challange successfully run.");
+		System.out.println("Touché Challenge successfully run.");
 	}
 	
 	
