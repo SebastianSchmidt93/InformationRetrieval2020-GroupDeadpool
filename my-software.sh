@@ -25,4 +25,4 @@ chmod 755 prototype/*
 cd prototype
 
 #execute the program
-my-software.sh -i $2 -o $4
+java -jar LucenePrototype.jar -i $2 -o $4
