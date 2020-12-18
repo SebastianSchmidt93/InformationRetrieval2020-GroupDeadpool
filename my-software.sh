@@ -6,7 +6,7 @@
 
 cd Docker
 docker build --tag ir_deadpool:recent .
-docker run -ti --detach --name IRgroupDeadpool -p 80:88 -v ${PWD}/Files_To_Index/:/input-dir ir_deadpool:recent
+docker run -ti --name IRgroupDeadpool -p 80:88 -v ${PWD}/Files_To_Index/:/input-dir ir_deadpool:recent
 #docker exec -ti IRgroupDeadpool "/bin/bash"
 
 
