@@ -1,4 +1,0 @@
-lucene.core==8.7.0
-lucene.queryparser==8.7.0
-jdom==2.0.6
-jackson.core==2.12.0
