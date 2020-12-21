@@ -1,4 +1,4 @@
-package prototype;
+package core;
 
 import java.io.IOException;
 import java.nio.file.Paths;

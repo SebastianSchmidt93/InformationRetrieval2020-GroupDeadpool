@@ -1,33 +1,18 @@
 #!/bin/bash
 
-#create the input directory
-mkdir $2
+# TODO Check input parameters
+INPUT=$2
+OUTPUT=$4
 
-#create the output directory
-mkdir $4
-
-#switch into the docker directory
+# switch into the docker directory and copy necessary files
 cd Docker
+cp -r ../app app
 
-#build the docker image
-docker build --tag ir_deadpool:recent .
+# build the docker image
+docker build --tag uh-t1-deadpool:recent .
 
-#run and start the docker container
-docker run -ti -d --name IRgroupDeadpool -p 80:88 -v ${PWD}/..:/prototype/ ir_deadpool:recent
+# run and start the docker container
+docker run -ti --rm --name IRgroupDeadpool -p 80:88 -v $INPUT:/input:ro -v $OUTPUT:/output uh-t1-deadpool:recent -i input -o output
 
-#enter the docker container
-docker exec -ti IRgroupDeadpool "/bin/bash"
-
-#modify the rights for the necessary files
-chmod 755 prototype/*
-
-#switch into the directory containing the program
-cd prototype
-
-#copy the topics.xml into the input directory
-cp topics.xml $2
-
-#we still need to obtain the data that the program works with, and move it to the input directory as well.
-
-#execute the program
-java -jar LucenePrototype.jar -i $2 -o $4
+# finally, remove copied files
+rm -r app

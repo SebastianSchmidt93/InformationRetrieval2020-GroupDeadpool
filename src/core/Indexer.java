@@ -1,6 +1,8 @@
-package prototype;
+package core;
 
 import java.nio.file.Paths;
+import java.util.HashSet;
+import java.util.Set;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
@@ -45,9 +47,16 @@ public class Indexer {
       JsonStreamer jsonStreamer = new JsonStreamer(file);
       int count = 0;
       
+      Set<String> seenArgs = new HashSet<String>();
+      
       for(Document d : jsonStreamer)
       {
-    	  writer.addDocument(d);
+    	  // If argument has been seen before, skip it
+    	  if( !seenArgs.contains(d.get("id")) )
+    	  {
+    		  writer.addDocument(d);
+    		  seenArgs.add(d.get("id"));
+    	  }
     	  
     	  count++;
     	  

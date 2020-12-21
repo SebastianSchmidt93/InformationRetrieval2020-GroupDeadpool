@@ -1,4 +1,4 @@
-package prototype;
+package core;
 
 import org.apache.lucene.analysis.Analyzer;
 
