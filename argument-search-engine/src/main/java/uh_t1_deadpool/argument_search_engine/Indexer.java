@@ -1,4 +1,4 @@
-package core;
+package uh_t1_deadpool.argument_search_engine;
 
 import java.nio.file.Paths;
 import java.util.HashSet;

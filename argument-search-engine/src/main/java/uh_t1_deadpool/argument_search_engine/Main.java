@@ -1,4 +1,4 @@
-package core;
+package uh_t1_deadpool.argument_search_engine;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -190,8 +190,8 @@ public class Main
 		
 		try 
 		{
-			DirectoryReader directoryReader = DirectoryReader.open(FSDirectory.open(Paths.get(indexDirPath)) );
-	    } 
+			DirectoryReader.open(FSDirectory.open(Paths.get(indexDirPath)) );
+	    }
 		catch ( IOException e) 
 		{
 	    	exists = false;

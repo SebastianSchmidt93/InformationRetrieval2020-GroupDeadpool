@@ -6,13 +6,13 @@ OUTPUT=$4
 
 # switch into the docker directory and copy necessary files
 cd Docker
-cp -r ../app app
+cp -r ../argument-search-engine argument-search-engine
 
 # build the docker image
 docker build --tag uh-t1-deadpool:recent .
 
 # run and start the docker container
-docker run -ti --rm --name IRgroupDeadpool -p 80:88 -v $INPUT:/input:ro -v $OUTPUT:/output uh-t1-deadpool:recent -i input -o output
+docker run -ti --rm --name IRgroupDeadpool -p 80:88 -v $INPUT:/input:ro -v $OUTPUT:/output uh-t1-deadpool:recent # -i "/input" -o "/output"
 
 # finally, remove copied files
-rm -r app
+rm -r argument-search-engine

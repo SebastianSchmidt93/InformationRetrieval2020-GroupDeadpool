@@ -1,4 +1,4 @@
-package core;
+package uh_t1_deadpool.argument_search_engine;
 
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -29,7 +29,8 @@ public class Searcher {
 	  
 	  String[] contentFields = {LuceneConstants.CONCLUSION_FIELD, LuceneConstants.PREMISE_FIELD};
 	  
-	  this.queryParser = new MultiFieldQueryParser(contentFields, new StandardAnalyzer()); //TODO
+	  // TODO Custom Queryparser
+	  this.queryParser = new MultiFieldQueryParser(contentFields, new StandardAnalyzer());
    }
    
 	public TopDocs search( String searchQuery) throws IOException, ParseException 
