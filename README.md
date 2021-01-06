@@ -2,13 +2,13 @@
 ##### uh-t1-deadpool
 
 This repository provides a search engine for arguments. For a given query (e.g. "Is Climate Change real?") it will retreive the most relevant pro- and con-arguments regarding the query. The two main functionalities this repo. provides are:
-  - Retreival (my-programm.sh)
+  - Retreival (my-software.sh)
   - Evaluation (eval.sh)
 
 ### Retreival
-The shell-script "my-programm.sh" will index a given argument dataset, retreive the most relevant arguments for a given set of queries and store the results in trec-format. To run the script, open your console in the root directory of the repo. and type:
+The shell-script "my-software.sh" will index a given argument dataset, retreive the most relevant arguments for a given set of queries and store the results in trec-format. To run the script, open your console in the root directory of the repo. and type:
 ```sh
-$ ./my-programm.sh -i INPUT_PATH -o OUTPUT_PATH
+$ ./my-software.sh -i INPUT_PATH -o OUTPUT_PATH
 ```
 Where INPUT_PATH is the path to a directory containing .json files of the to-be-indexed arguments and a .xml file containing the queries. OUTPUT_PATH denotes the directory in which the results will be stored as "run.txt".
 
