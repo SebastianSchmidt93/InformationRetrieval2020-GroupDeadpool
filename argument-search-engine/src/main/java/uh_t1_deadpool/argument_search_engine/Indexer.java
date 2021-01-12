@@ -7,7 +7,6 @@ import java.io.File;
 import java.io.FileFilter;
 import java.io.IOException;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -26,7 +25,7 @@ public class Indexer {
 	   Directory indexDirectory = FSDirectory.open(Paths.get(indexDirectoryPath));
   
 	   //TODO choose analyzer
-	   Analyzer analyzer = new StandardAnalyzer();
+	   Analyzer analyzer = new ArgumentAnalyzer();
   
 	   //configure index
 	   IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);

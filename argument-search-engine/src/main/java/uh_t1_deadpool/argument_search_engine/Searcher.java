@@ -3,7 +3,6 @@ package uh_t1_deadpool.argument_search_engine;
 import java.io.IOException;
 import java.nio.file.Paths;
 
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
@@ -16,7 +15,9 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class Searcher {
-	QueryParser queryParser;
+	public static final String[] FIELDS = {LuceneConstants.CONCLUSION_FIELD, LuceneConstants.PREMISE_FIELD};
+	
+	ArgumentQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Query query;
    
@@ -27,15 +28,16 @@ public class Searcher {
 	  DirectoryReader indexReader = DirectoryReader.open(indexDirectory);
 	  this.indexSearcher = new IndexSearcher(indexReader);
 	  
-	  String[] contentFields = {LuceneConstants.CONCLUSION_FIELD, LuceneConstants.PREMISE_FIELD};
-	  
 	  // TODO Custom Queryparser
-	  this.queryParser = new MultiFieldQueryParser(contentFields, new StandardAnalyzer());
+	  //this.queryParser = new MultiFieldQueryParser(FIELDS, new ArgumentAnalyzer());
+	  this.queryParser = new ArgumentQueryParser(FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
    }
    
-	public TopDocs search( String searchQuery) throws IOException, ParseException 
+	public TopDocs search(String searchQuery) throws IOException, ParseException 
 	{
 		query = this.queryParser.parse(searchQuery);
+		//TODO test
+		System.out.println("Query :" + query.toString());
 		
 		return indexSearcher.search(query, LuceneConstants.MAX_SEARCH);
 	}

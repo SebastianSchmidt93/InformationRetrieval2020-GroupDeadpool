@@ -3,8 +3,14 @@ package uh_t1_deadpool.argument_search_engine;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.StringReader;
 import java.nio.file.Paths;
+import java.util.ArrayList;
+import java.util.List;
 
+import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
@@ -16,7 +22,6 @@ public class Main
 {
 	public static void main(String[] args)
 	{
-		
 		try
 		{
 			String[] paths = parseArgs(args);
@@ -112,6 +117,8 @@ public class Main
 			for(Topic topic : topicReader)
 			{
 				System.out.println("------ " + topic.title + " ------");
+				// TODO print out query
+				System.out.println(tokenizeString(new ArgumentAnalyzer(), topic.title));
 				
 				ScoreDoc[] docs = searcher.search(topic.title).scoreDocs;
 				
@@ -198,5 +205,26 @@ public class Main
 	    }
 		
 		return exists;
+	}
+	
+	//TODO Test Analyzer
+	public static List<String> tokenizeString(Analyzer analyzer, String string) 
+	{
+		List<String> result = new ArrayList<String>();
+	    try 
+	    {
+	    	TokenStream stream  = analyzer.tokenStream(null, new StringReader(string));
+	    	stream.reset();
+	    	while (stream.incrementToken()) 
+	    	{
+	    		result.add(stream.getAttribute(CharTermAttribute.class).toString());
+	    	}
+	    } 
+	    catch (IOException e) 
+	    {
+	    	// not thrown b/c we're using a string reader...
+	    	throw new RuntimeException(e);
+	    }
+	    return result;
 	}
 }

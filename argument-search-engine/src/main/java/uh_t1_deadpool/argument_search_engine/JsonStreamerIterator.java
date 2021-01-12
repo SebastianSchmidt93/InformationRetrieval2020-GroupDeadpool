@@ -7,7 +7,6 @@ import java.util.Iterator;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.document.Field;
 import org.apache.lucene.document.StoredField;
-import org.apache.lucene.document.TextField;
 
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.core.JsonParser;
@@ -65,8 +64,8 @@ public class JsonStreamerIterator implements Iterator<Document>
 	{
         Document document = new Document();
         StoredField argIdField = null;
-        TextField argConclusionField = null;
-        TextField argPremiseField = null;
+        Field argConclusionField = null;
+        Field argPremiseField = null;
         StoredField argStanceField = null;
         
         Boolean reading  = true;
@@ -93,13 +92,13 @@ public class JsonStreamerIterator implements Iterator<Document>
 		            case JsonStreamerIterator.ARGUMENT_CONCLUSION:
 		            	jsonToken = jsonParser.nextToken();
 		            	
-		            	argConclusionField = new TextField(LuceneConstants.CONCLUSION_FIELD, jsonParser.getText(), Field.Store.YES);
+		            	argConclusionField = new ArgumentField(LuceneConstants.CONCLUSION_FIELD, jsonParser.getText(), Field.Store.YES);
 		            	break;
 		            	
 		            case JsonStreamerIterator.ARGUMENT_PREMISE:
 		            	jsonToken = jsonParser.nextToken();
 		            	
-		            	argPremiseField = new TextField(LuceneConstants.PREMISE_FIELD, jsonParser.getText(), Field.Store.YES);
+		            	argPremiseField = new ArgumentField(LuceneConstants.PREMISE_FIELD, jsonParser.getText(), Field.Store.YES);
 		            	break;
 		            	
 		            case JsonStreamerIterator.ARGUMENT_STANCE:
@@ -139,5 +138,4 @@ public class JsonStreamerIterator implements Iterator<Document>
 	{
 		return this.recordsParsed;
 	}
-
 }
