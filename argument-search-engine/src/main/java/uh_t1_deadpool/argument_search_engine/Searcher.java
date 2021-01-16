@@ -3,6 +3,7 @@ package uh_t1_deadpool.argument_search_engine;
 import java.io.IOException;
 import java.nio.file.Paths;
 
+import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.DirectoryReader;
@@ -29,13 +30,13 @@ public class Searcher {
 	  this.indexSearcher = new IndexSearcher(indexReader);
 	  
 	  // TODO Custom Queryparser
-	  //this.queryParser = new MultiFieldQueryParser(FIELDS, new ArgumentAnalyzer());
+	  //this.queryParser = new MultiFieldQueryParser(FIELDS, new StandardAnalyzer());
 	  this.queryParser = new ArgumentQueryParser(FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
    }
    
 	public TopDocs search(String searchQuery) throws IOException, ParseException 
 	{
-		query = this.queryParser.parse(searchQuery);
+		query = this.queryParser.parse(searchQuery); //TODO
 		//TODO test
 		System.out.println("Query :" + query.toString());
 		

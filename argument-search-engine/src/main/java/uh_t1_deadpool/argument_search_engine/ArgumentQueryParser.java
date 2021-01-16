@@ -5,6 +5,8 @@ import java.util.HashMap;
 import java.util.PriorityQueue;
 
 import org.apache.lucene.analysis.Analyzer;
+import org.apache.lucene.analysis.TokenStream;
+import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.index.IndexReader;
 import org.apache.lucene.index.PostingsEnum;
 import org.apache.lucene.index.Term;
@@ -25,9 +27,9 @@ import org.apache.lucene.util.BytesRef;
 public class ArgumentQueryParser
 {
 	/** How many of the top retrieved documents will be examined */
-	public static final int DEFAULT_NUM_DOCS_REFERENCED = 20;
+	public static final int DEFAULT_NUM_DOCS_REFERENCED = 30;
 	/** How many of the most occurring terms will be added in all cases */
-	public static final int DEFAULT_MIN_TERMS_ADDED = 5;
+	public static final int DEFAULT_MIN_TERMS_ADDED = 2;
 	
 	private int numDocsReferenced = DEFAULT_NUM_DOCS_REFERENCED;
 	private String[] fields;
@@ -46,8 +48,9 @@ public class ArgumentQueryParser
 	public Query parse(String searchQuery) throws IOException, ParseException 
 	{
 		// Get the highest scored documents TODO Analyzer
-		QueryParser queryParser = new MultiFieldQueryParser(this.fields, this.analyzer);
-		Query query = queryParser.parse(searchQuery);
+		//QueryParser queryParser = new MultiFieldQueryParser(this.fields, this.analyzer);
+		//Query query = queryParser.parse(searchQuery);
+		Query query = this.simpleParse(searchQuery);
 		ScoreDoc[] docs = indexSearcher.search(query, LuceneConstants.MAX_SEARCH).scoreDocs;
 		
 		// Queue that dynamically sorts the accumulated scores of all occurring terms
@@ -98,7 +101,7 @@ public class ArgumentQueryParser
 		
 		float avgScore = totalScore / termCount;
 		
-		return makeQuery(avgScore, query, queue);
+		return makeQuery(avgScore, (BooleanQuery)query, queue);
 	}
 	
 	/**
@@ -108,10 +111,15 @@ public class ArgumentQueryParser
 	 * @param queue
 	 * @return
 	 */
-	private Query makeQuery(float avgScore, Query initQuery, PriorityQueue<TermScore> queue)
+	private Query makeQuery(float avgScore, BooleanQuery initQuery, PriorityQueue<TermScore> queue)
 	{
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
-		queryBuilder.add(initQuery, BooleanClause.Occur.SHOULD);
+		
+		for(BooleanClause clause : initQuery.clauses())
+		{
+			queryBuilder.add(clause);
+		}
+		
 		
 		// Get all Elements that have an above-average score
 		// but add at least DEFAULT_MIN_TERMS_ADDED
@@ -124,12 +132,16 @@ public class ArgumentQueryParser
 			if(count > DEFAULT_MIN_TERMS_ADDED && termScore.score < avgScore)
 				break;
 			
+			BooleanQuery.Builder fieldQuery = new BooleanQuery.Builder();
+			
 			for(String field : this.fields)
 			{
 				TermQuery termQuery = new TermQuery(new Term(field, termScore.term));
 				BooleanClause clause = new BooleanClause(termQuery, BooleanClause.Occur.SHOULD);
-				queryBuilder.add(clause);
+				fieldQuery.add(clause);
 			}
+			
+			queryBuilder.add(fieldQuery.build(), BooleanClause.Occur.SHOULD);
 		}
 		
 		return queryBuilder.build();
@@ -170,6 +182,37 @@ public class ArgumentQueryParser
 		}
 		
 		return scorer.score(termFreq, 1);
+	}
+	
+	public Query simpleParse(String query) throws IOException
+	{
+		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
+		
+		TokenStream tokens = this.analyzer.tokenStream(this.fields[0], query);
+		
+		CharTermAttribute charTermAttribute = tokens.addAttribute(CharTermAttribute.class);
+
+		tokens.reset();
+		
+		while (tokens.incrementToken()) 
+		{
+			BooleanQuery.Builder fieldQuery = new BooleanQuery.Builder();
+		    String term = charTermAttribute.toString();
+		    
+		    for(String field : this.fields)
+			{
+				TermQuery termQuery = new TermQuery(new Term(field, term));
+				BooleanClause clause = new BooleanClause(termQuery, BooleanClause.Occur.SHOULD);
+				fieldQuery.add(clause);
+			}
+		    
+		    queryBuilder.add(fieldQuery.build(), BooleanClause.Occur.SHOULD);
+		}
+		
+		tokens.end();
+		tokens.close();
+		
+		return queryBuilder.build();
 	}
 	
 	/**
