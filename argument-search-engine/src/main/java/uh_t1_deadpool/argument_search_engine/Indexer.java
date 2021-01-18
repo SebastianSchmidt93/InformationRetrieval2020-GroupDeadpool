@@ -26,7 +26,7 @@ public class Indexer {
 	   Directory indexDirectory = FSDirectory.open(Paths.get(indexDirectoryPath));
   
 	   //TODO choose analyzer
-	   Analyzer analyzer = new StandardAnalyzer();
+	   Analyzer analyzer = new ArgumentAnalyzer();
   
 	   //configure index
 	   IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);

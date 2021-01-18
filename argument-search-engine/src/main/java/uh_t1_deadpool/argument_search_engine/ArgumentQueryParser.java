@@ -2,6 +2,7 @@ package uh_t1_deadpool.argument_search_engine;
 
 import java.io.IOException;
 import java.util.HashMap;
+import java.util.List;
 import java.util.PriorityQueue;
 
 import org.apache.lucene.analysis.Analyzer;
@@ -21,15 +22,17 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TermQuery;
+import org.apache.lucene.search.similarities.ClassicSimilarity;
 import org.apache.lucene.search.similarities.Similarity;
+import org.apache.lucene.search.similarities.TFIDFSimilarity;
 import org.apache.lucene.util.BytesRef;
 
 public class ArgumentQueryParser
 {
 	/** How many of the top retrieved documents will be examined */
-	public static final int DEFAULT_NUM_DOCS_REFERENCED = 30;
+	public static final int DEFAULT_NUM_DOCS_REFERENCED = 20;
 	/** How many of the most occurring terms will be added in all cases */
-	public static final int DEFAULT_MIN_TERMS_ADDED = 2;
+	public static final int DEFAULT_MIN_TERMS_ADDED = 0;
 	
 	private int numDocsReferenced = DEFAULT_NUM_DOCS_REFERENCED;
 	private String[] fields;
@@ -67,12 +70,18 @@ public class ArgumentQueryParser
 			for(String field : this.fields)
 			{
 				TermsEnum terms = indexReader.getTermVector(doc.doc, field).iterator();
+				List<String> queryTerms = Searcher.tokenizeString(this.analyzer, searchQuery);
 				
 				while( terms.next() != null );
 				{
 					// Actually compute scoring
 					BytesRef term = terms.term();
 					String termString = term.utf8ToString();
+					
+					// Skip terms that are already in query
+					for(String queryTerm : queryTerms)
+						if(termString.equals(queryTerm))
+							continue;
 					
 					TermScore current = termScoreMap.get(termString);
 					if(current == null)
@@ -158,7 +167,7 @@ public class ArgumentQueryParser
 	{
 		// Get the default scoring model 
 		// TODO get the used model
-		Similarity.SimScorer scorer = IndexSearcher.getDefaultSimilarity().scorer(
+		Similarity.SimScorer scorer = indexSearcher.getSimilarity().scorer(
 				1, 
 				indexSearcher.collectionStatistics(field), 
 				indexSearcher.termStatistics(term, termAttr.docFreq(), termAttr.totalTermFreq()));

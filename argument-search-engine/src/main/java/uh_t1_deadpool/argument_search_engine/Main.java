@@ -118,7 +118,7 @@ public class Main
 			{
 				System.out.println("------ " + topic.title + " ------");
 				// TODO print out query
-				System.out.println(tokenizeString(new ArgumentAnalyzer(), topic.title));
+				//System.out.println(tokenizeString(new ArgumentAnalyzer(), topic.title));
 				
 				ScoreDoc[] docs = searcher.search(topic.title).scoreDocs;
 				
@@ -205,26 +205,5 @@ public class Main
 	    }
 		
 		return exists;
-	}
-	
-	//TODO Test Analyzer
-	public static List<String> tokenizeString(Analyzer analyzer, String string) 
-	{
-		List<String> result = new ArrayList<String>();
-	    try 
-	    {
-	    	TokenStream stream  = analyzer.tokenStream(null, new StringReader(string));
-	    	stream.reset();
-	    	while (stream.incrementToken()) 
-	    	{
-	    		result.add(stream.getAttribute(CharTermAttribute.class).toString());
-	    	}
-	    } 
-	    catch (IOException e) 
-	    {
-	    	// not thrown b/c we're using a string reader...
-	    	throw new RuntimeException(e);
-	    }
-	    return result;
 	}
 }
