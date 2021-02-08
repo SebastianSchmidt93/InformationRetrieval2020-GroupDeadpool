@@ -7,10 +7,6 @@ import org.apache.lucene.analysis.LowerCaseFilter;
 import org.apache.lucene.analysis.StopFilter;
 import org.apache.lucene.analysis.StopwordAnalyzerBase;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.en.KStemFilter;
-import org.apache.lucene.analysis.en.PorterStemFilter;
-import org.apache.lucene.analysis.shingle.FixedShingleFilter;
-import org.apache.lucene.analysis.shingle.ShingleFilter;
 import org.apache.lucene.analysis.standard.StandardTokenizer;
 
 public final class ArgumentAnalyzer extends StopwordAnalyzerBase
@@ -19,7 +15,7 @@ public final class ArgumentAnalyzer extends StopwordAnalyzerBase
 	public static final String[] STOP_WORDS_SET = {"but", "be", "with", "such", "then", "for", "no",
 			"will", "not", "are", "and", "their", "if", "this", "on", "into", "a", "or", "there", 
 			"in", "that", "they", "was", "is", "it", "an", "the", "as", "at", "these", "by", "to", 
-			"of", "you", "your", "i"}; //, "should", "is", "would", "could"};
+			"of", "you", "your", "i"};//, "have", "yet", "should", "would", "could"};
 	/** Default maximum allowed token length */
 	public static final int DEFAULT_MAX_TOKEN_LENGTH = 255;
 

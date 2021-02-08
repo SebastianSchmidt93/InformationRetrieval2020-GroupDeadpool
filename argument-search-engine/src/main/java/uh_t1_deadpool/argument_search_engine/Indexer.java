@@ -8,7 +8,6 @@ import java.io.FileFilter;
 import java.io.IOException;
 
 import org.apache.lucene.analysis.Analyzer;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
 import org.apache.lucene.index.IndexWriter;
@@ -31,6 +30,7 @@ public class Indexer {
 	   //configure index
 	   IndexWriterConfig writerConfig = new IndexWriterConfig(analyzer);
 	   writerConfig.setOpenMode(IndexWriterConfig.OpenMode.CREATE_OR_APPEND);
+	   writerConfig.setSimilarity(LuceneConstants.SIMILARITY);
 
 	   //create the indexer
 	   this.writer = new IndexWriter(indexDirectory, writerConfig);

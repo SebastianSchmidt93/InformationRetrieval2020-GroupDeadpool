@@ -1,5 +1,8 @@
 package uh_t1_deadpool.argument_search_engine;
 
+import org.apache.lucene.search.similarities.LMDirichletSimilarity;
+import org.apache.lucene.search.similarities.Similarity;
+
 public class LuceneConstants 
 {
 	//TODO
@@ -13,4 +16,6 @@ public class LuceneConstants
 	public static final int MAX_SEARCH = 50;
 	
 	public static final String GROUP_NAME = "uh-t1-deadpool";
+	
+	public static final Similarity SIMILARITY = new LMDirichletSimilarity(4000);
 }

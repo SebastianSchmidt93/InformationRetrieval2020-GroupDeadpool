@@ -8,7 +8,6 @@ import java.util.List;
 
 import org.apache.lucene.analysis.Analyzer;
 import org.apache.lucene.analysis.TokenStream;
-import org.apache.lucene.analysis.standard.StandardAnalyzer;
 import org.apache.lucene.analysis.tokenattributes.CharTermAttribute;
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -18,7 +17,6 @@ import org.apache.lucene.search.IndexSearcher;
 import org.apache.lucene.search.Query;
 import org.apache.lucene.search.ScoreDoc;
 import org.apache.lucene.search.TopDocs;
-import org.apache.lucene.search.similarities.LMDirichletSimilarity;
 import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
@@ -35,7 +33,7 @@ public class Searcher {
 	  
 	  DirectoryReader indexReader = DirectoryReader.open(indexDirectory);
 	  this.indexSearcher = new IndexSearcher(indexReader);
-	  this.indexSearcher.setSimilarity(new LMDirichletSimilarity(4000));
+	  this.indexSearcher.setSimilarity(LuceneConstants.SIMILARITY);
 	  
 	  // TODO Custom Queryparser
 	  this.queryParser = new ArgumentQueryParser(FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
@@ -43,7 +41,7 @@ public class Searcher {
    
 	public TopDocs search(String searchQuery) throws IOException, ParseException 
 	{
-		query = this.queryParser.simpleParse(searchQuery); //TODO
+		query = this.queryParser.parse(searchQuery); //TODO
 		//TODO test
 		System.out.println("Query :" + query.toString());
 		
