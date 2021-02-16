@@ -21,8 +21,6 @@ import org.apache.lucene.store.Directory;
 import org.apache.lucene.store.FSDirectory;
 
 public class Searcher {
-	public static final String[] FIELDS = {LuceneConstants.CONCLUSION_FIELD, LuceneConstants.PREMISE_FIELD};
-	
 	ArgumentQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Query query;
@@ -36,7 +34,7 @@ public class Searcher {
 	  this.indexSearcher.setSimilarity(LuceneConstants.SIMILARITY);
 	  
 	  // TODO Custom Queryparser
-	  this.queryParser = new ArgumentQueryParser(FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
+	  this.queryParser = new ArgumentQueryParser(LuceneConstants.FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
    }
    
 	public TopDocs search(String searchQuery) throws IOException, ParseException 

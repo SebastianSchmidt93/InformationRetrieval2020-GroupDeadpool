@@ -131,16 +131,16 @@ public class ArgumentQueryParser
 	public TermScore getTermProb(String termString) throws IOException
 	{
 		/* 
-		 * TODO Single Queries
+		 * TODO Multifield Queries
 		 * Expensive but accurate 
 		 */
-		Query termQ = this.getMultiFieldQuery(termString);
-		float docFreq = this.indexSearcher.count(termQ);
+		//Query termQ = this.getMultiFieldQuery(termString);
+		//float docFreq = this.indexSearcher.count(termQ);
 		/*
 		 * Quick but slightly inaccurate
 		 */
-		//Term term = new Term(LuceneConstants.PREMISE_FIELD, termString);
-		//float docFreq = this.indexReader.docFreq(term);
+		Term term = new Term(LuceneConstants.PREMISE_FIELD, termString);
+		float docFreq = this.indexReader.docFreq(term);
 		
 		float pTerm = docFreq / numDocs;
 		
@@ -164,8 +164,8 @@ public class ArgumentQueryParser
 	public float getTermSimilarity(TermScore queryTermProb, TermScore expTermProb) throws IOException
 	{
 		// Single Queries
-		Query queryTermQ = this.getMultiFieldQuery(queryTermProb.name);
-		Query expTermQ = this.getMultiFieldQuery(expTermProb.name);
+		Query queryTermQ = new TermQuery(new Term(LuceneConstants.PREMISE_FIELD, queryTermProb.name));//this.getMultiFieldQuery(queryTermProb.name);
+		Query expTermQ = new TermQuery(new Term(LuceneConstants.PREMISE_FIELD, expTermProb.name));//this.getMultiFieldQuery(expTermProb.name);
 		// AND-Query
 		BooleanQuery.Builder qBuilder = new BooleanQuery.Builder();
 		qBuilder.add(queryTermQ, BooleanClause.Occur.MUST);
@@ -203,15 +203,16 @@ public class ArgumentQueryParser
 		for(String field : this.fields)
 		{
 			Query termQuery = new TermQuery(new Term(field, term));
-			termQuery = new BoostQuery(termQuery, boost); // Make it less relevant than original query
+			termQuery = new BoostQuery(termQuery, LuceneConstants.FIELD_BOOSTS.get(field)); // Boost field
 			
 			BooleanClause clause = new BooleanClause(termQuery, BooleanClause.Occur.SHOULD);
 			fieldQuery.add(clause);
 		}
 		
 		Query multiFieldQuery = fieldQuery.build();
+		Query boostedMultiFieldQuery = new BoostQuery(multiFieldQuery, boost); // Boost query
 		
-		return multiFieldQuery;
+		return boostedMultiFieldQuery;
 	}
 	
 	
@@ -316,17 +317,9 @@ public class ArgumentQueryParser
 		
 		while (tokens.incrementToken()) 
 		{
-			BooleanQuery.Builder fieldQuery = new BooleanQuery.Builder();
-		    String term = charTermAttribute.toString();
+			String term = charTermAttribute.toString();
 		    
-		    for(String field : this.fields)
-			{
-				TermQuery termQuery = new TermQuery(new Term(field, term));
-				BooleanClause clause = new BooleanClause(termQuery, BooleanClause.Occur.SHOULD);
-				fieldQuery.add(clause);
-			}
-		    
-		    queryBuilder.add(fieldQuery.build(), BooleanClause.Occur.SHOULD); //TODO
+		    queryBuilder.add(getMultiFieldQuery(term, 1), BooleanClause.Occur.SHOULD);
 		}
 		
 		tokens.end();
