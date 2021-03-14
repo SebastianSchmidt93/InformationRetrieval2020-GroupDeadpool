@@ -1,5 +1,5 @@
 #!/bin/bash
-MEASURES="-m ndcg_cut.10 -m set_recall -m set_P -m set_F.1.15"
+MEASURES="-m ndcg_cut.5 -m set_recall -m set_P -m set_F.1.15"
 STD_INPUT_PATH="./results/run.txt"
 STD_QRELS_PATH="./results/topics_labels.qrels"
 

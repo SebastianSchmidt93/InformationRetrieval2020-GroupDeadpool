@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Paths;
+import java.util.HashMap;
+import java.util.Random;
 
 import org.apache.lucene.document.Document;
 import org.apache.lucene.index.CorruptIndexException;
@@ -16,21 +18,37 @@ public class Main
 {
 	public static void main(String[] args)
 	{
+		boolean test = false;
+		
 		try
 		{
 			String[] paths = parseArgs(args);
 			
 			String dataDirPath = paths[0];
-			String topicsFilePath = paths[1];
-			String resultsFilePath = paths[2];
+			String topicsFilePath = paths[0] + "/" + LuceneConstants.TOPICS_XML_FILE_NAME;
+			String resultsDirPath = paths[1];
+			String resultsFilePath = paths[1] + "/" + LuceneConstants.RESULT_FILE_NAME;
 			String indexDirPath = "index";
-			
 			
 			createIndex(dataDirPath, indexDirPath);
 	        
-			
 			// Search and store results of topics
-			runToucheChallenge(indexDirPath, topicsFilePath, resultsFilePath);
+			if(test)
+			{
+				String qrelsFilePath = paths[2];
+				String evalScriptPath = paths[3];
+				
+				if(evalScriptPath == null || qrelsFilePath == null)
+					throw(new RuntimeException("Error: Testing needs a qrels-file (argument \"-qrel\") and a TREC evaluation script  (argument \"-eval\")!"));
+				
+				TrecEval eval = new TrecEval(evalScriptPath, qrelsFilePath);
+				
+				//evalFiles(resultsDirPath, eval)
+				
+				runTests(indexDirPath, topicsFilePath, resultsDirPath, eval);
+			}
+			else
+				runToucheChallenge(indexDirPath, topicsFilePath, resultsFilePath);
 		}
 		catch(Exception e) //TODO handle exceptions more specifically
 		{
@@ -94,10 +112,8 @@ public class Main
 	}
 	
 	
-	public static void runToucheChallenge(String indexDirPath, String topicsFilePath, String resultsFilePath) throws IOException, ParseException
+	public static void runToucheChallenge(String indexDirPath, String topicsFilePath, String resultsFilePath, Searcher searcher) throws IOException, ParseException
 	{
-		Searcher searcher = new Searcher(indexDirPath);
-			
 		XMLTopicReader topicReader = new XMLTopicReader(topicsFilePath);
 		
 		ensureDirExists( Paths.get(resultsFilePath).getParent().toString() );
@@ -111,8 +127,6 @@ public class Main
 			for(Topic topic : topicReader)
 			{
 				System.out.println("------ " + topic.title + " ------");
-				// TODO print out query
-				//System.out.println(tokenizeString(new ArgumentAnalyzer(), topic.title));
 				
 				ScoreDoc[] docs = searcher.search(topic.title).scoreDocs;
 				
@@ -121,6 +135,106 @@ public class Main
 		}
 		
 		System.out.println("Touché Challenge successfully run.");
+	}
+	
+	
+	public static void runToucheChallenge(String indexDirPath, String topicsFilePath, String resultsFilePath) throws IOException, ParseException
+	{
+		Searcher searcher = new Searcher(indexDirPath);
+		
+		runToucheChallenge(indexDirPath, topicsFilePath, resultsFilePath, searcher);
+	}
+	
+	
+	public static void runTests(String indexDirPath, String topicsFilePath, String resultsPath, TrecEval eval) throws IOException, ParseException
+	{
+		String csvFileName = "test_results.csv";
+		
+		Random generator = new Random();
+		CSVWriter csvWriter = new CSVWriter();
+		
+		int testRuns = 10;
+		int numDocsRef = 5;
+		Searcher searcher = new Searcher(indexDirPath);
+		searcher.queryParser.numDocsReferenced = numDocsRef;
+		
+		// Weighting schemes for query expansion
+		HashMap<String, TriFunction<Float, Float, Float, Float>> schemes = new HashMap<>();
+		schemes.put("MI", ArgumentQueryParser::MI);
+		schemes.put("CP", ArgumentQueryParser::CP);
+		schemes.put("SCP1", ArgumentQueryParser::SCP1);
+		schemes.put("SCP2", ArgumentQueryParser::SCP2);
+		
+		// Run Baseline
+		searcher.queryExpansion = false;
+		testRun(searcher, "Baseline", resultsPath, indexDirPath, topicsFilePath, eval, csvWriter);
+		searcher.queryExpansion = true;
+		
+		// Run Expansion variants
+		for(int i = 0; i < testRuns; i++)
+		{
+			float m = generator.nextFloat();
+			float b = generator.nextFloat();
+			
+			searcher.queryParser.scoreCap = m;
+			searcher.queryParser.expansionBoost = b;
+			
+			System.out.println(String.format("\nm: %f\nb: %f", m, b));
+			
+			for(String schemeName : schemes.keySet())
+			{
+				searcher.queryParser.termSim = schemes.get(schemeName);
+				testRun(searcher, schemeName, resultsPath, indexDirPath, topicsFilePath, eval, csvWriter);
+			}
+		}
+		
+		csvWriter.write(String.format("%s/%s", resultsPath, csvFileName));
+		System.out.println("Test complete!");
+	}
+	
+	
+	public static void testRun(Searcher searcher, String schemeName, String resultsPath, String indexDirPath, String topicsFilePath, 
+			TrecEval eval, CSVWriter csvWriter) throws IOException, ParseException
+	{
+		System.out.println(String.format("----- %s -----", schemeName));
+		
+		// Add summary of scores to CSV-file
+		HashMap<String, String> entry = new HashMap<>();
+		entry.put("scheme", schemeName);
+		
+		String resultFile;
+		
+		if(searcher.queryExpansion)
+		{
+			int n = searcher.queryParser.numDocsReferenced;
+			float m = searcher.queryParser.scoreCap;
+			float b = searcher.queryParser.expansionBoost;
+			
+			entry.put("n", String.valueOf(n));
+			entry.put("m", String.valueOf(m));
+			entry.put("b", String.valueOf(b));
+			
+			resultFile = getResultFileName(resultsPath, schemeName, n, m, b);
+		}
+		else
+		{
+			resultFile = String.format("%s/run_scheme:%s.txt", resultsPath, schemeName);
+		}
+		
+		// Produce TREC style output file
+		runToucheChallenge(indexDirPath, topicsFilePath, resultFile, searcher);
+		
+		HashMap<String, Float> scores = eval.eval(resultFile);
+		for(String measure : scores.keySet())
+			entry.put(measure, String.valueOf(scores.get(measure)));
+		
+		csvWriter.add(entry);
+	}
+	
+	
+	public static String getResultFileName(String path, String scheme, int n, float m, float b)
+	{
+		return String.format("%s/run_scheme:%s_n:%d_m:%f_b:%f.txt", path, scheme, n, m, b);
 	}
 	
 	
@@ -134,7 +248,7 @@ public class Main
 	 */
 	public static String[] parseArgs(String[] args) throws RuntimeException
 	{
-		String[] out = new String[3];
+		String[] out = new String[4];
 		boolean inDefined = false, outDefined = false;
 		
 		for(int i = 0; i < args.length; i++)
@@ -144,15 +258,24 @@ public class Main
 			case "-i":
 				i++;
 				out[0] = args[i];
-				out[1] = args[i] + "/" + LuceneConstants.TOPICS_XML_FILE_NAME;
 				
 				inDefined = true;
 				break;
 			case "-o":
 				i++;
-				out[2] = args[i] + "/" + LuceneConstants.RESULT_FILE_NAME;
+				out[1] = args[i];
 				
 				outDefined = true;
+				break;
+			case "-qrel":
+				i++;
+				out[2] = args[i];
+				
+				break;
+			case "-eval":
+				i++;
+				out[3] = args[i];
+				
 				break;
 			default:
 				System.err.println("Warning: Unknown command-line argument \"" + args[i] + "\". Skipping argument.");
@@ -199,5 +322,45 @@ public class Main
 	    }
 		
 		return exists;
+	}
+	
+	
+	public static void evalFiles(String resultsDirPath, TrecEval eval) throws IOException
+	{
+		//TODO begin
+		CSVWriter csvWriter = new CSVWriter();
+		
+		File dir = new File(resultsDirPath);
+		for(String fileName : dir.list())
+		{
+			int extInd = fileName.lastIndexOf(".");
+			
+			if(extInd < 0)
+				continue;
+			
+			String ext = fileName.substring(extInd, fileName.length());
+			String fileNamePlain = fileName.substring(0, extInd);
+			String[] components = fileNamePlain.split("_");
+			
+			if(ext.equals(".txt") && components[0].equals("run"))
+			{
+				HashMap<String, String> params = new HashMap<>();
+				
+				for(int i = 1; i < components.length; i++)
+				{
+					String[] parts = components[i].split(":");
+					
+					params.put(parts[0], parts[1].replace(",", "."));
+				}
+				
+				HashMap<String, Float> scores = eval.eval(String.format("%s/%s", resultsDirPath, fileName));
+				
+				for(String key : scores.keySet())
+					params.put(key, scores.get(key).toString());
+				
+				csvWriter.add(params);
+			}
+		}
+		csvWriter.write(String.format("%s/%s", resultsDirPath, "results.csv"));
 	}
 }

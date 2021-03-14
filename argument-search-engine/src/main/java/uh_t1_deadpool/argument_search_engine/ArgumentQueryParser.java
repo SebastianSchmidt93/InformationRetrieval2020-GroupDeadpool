@@ -31,11 +31,24 @@ public class ArgumentQueryParser
 	public static final int DEFAULT_NUM_DOCS_REFERENCED = 5;
 	/** How many of the most occurring terms will be added in all cases */
 	public static final int DEFAULT_MIN_TERMS_ADDED = 0;
-	public static final int DEFAULT_MAX_TERMS_ADDED = 10;
+	public static final int DEFAULT_MAX_TERMS_ADDED = 100;
 	public static final float DEFAULT_SCORE_CAP = 0.9f;
 	public static final float DEFAULT_EXPANSION_BOOST = 0.2f;
 	
-	private int numDocsReferenced = DEFAULT_NUM_DOCS_REFERENCED;
+	/** Weighting schemes to determine relevance of term to query term */
+	public static final float CP(float pQueryTerm, float pExpTerm, float pIntersect) 
+		{return (pIntersect/pQueryTerm);};
+	public static final float MI(float pQueryTerm, float pExpTerm, float pIntersect) 
+		{return (float)Math.log(pIntersect/(pQueryTerm*pExpTerm) + 1);};
+	public static final float SCP1(float pQueryTerm, float pExpTerm, float pIntersect) 
+		{return (pIntersect/pQueryTerm) * (float)Math.log(1/pExpTerm);};
+	public static final float SCP2(float pQueryTerm, float pExpTerm, float pIntersect) 
+		{return (pIntersect/pQueryTerm) * (float)Math.pow(Math.log(1/pExpTerm), 2);};
+	
+	public int numDocsReferenced = DEFAULT_NUM_DOCS_REFERENCED;
+	public float scoreCap = DEFAULT_SCORE_CAP;
+	public float expansionBoost = DEFAULT_EXPANSION_BOOST;
+	public TriFunction<Float, Float, Float, Float> termSim = ArgumentQueryParser::SCP2;
 	
 	private String[] fields;
 	private Analyzer analyzer;
@@ -142,7 +155,7 @@ public class ArgumentQueryParser
 		Term term = new Term(LuceneConstants.PREMISE_FIELD, termString);
 		float docFreq = this.indexReader.docFreq(term);
 		
-		float pTerm = docFreq / numDocs;
+		float pTerm = (docFreq + 0.5f) / (numDocs + 1);
 		
 		return new TermScore(termString, pTerm);
 	}
@@ -160,23 +173,33 @@ public class ArgumentQueryParser
 		return res;
 	}
 	
+	public float getIntersectProb(String[] terms) throws IOException
+	{
+		BooleanQuery.Builder qBuilder = new BooleanQuery.Builder();
+		
+		for(String term : terms)
+		{
+			Query termQuery = new TermQuery(new Term(LuceneConstants.PREMISE_FIELD, term));//this.getMultiFieldQuery(queryTermProb.name);
+			qBuilder.add(termQuery, BooleanClause.Occur.MUST);
+		}
+		
+		BooleanQuery intersectQ = qBuilder.build();
+		
+		float pIntersect = (this.indexSearcher.count(intersectQ) + 0.5f) / (numDocs + 1);
+		
+		return pIntersect;
+	}
+	
 	
 	public float getTermSimilarity(TermScore queryTermProb, TermScore expTermProb) throws IOException
 	{
-		// Single Queries
-		Query queryTermQ = new TermQuery(new Term(LuceneConstants.PREMISE_FIELD, queryTermProb.name));//this.getMultiFieldQuery(queryTermProb.name);
-		Query expTermQ = new TermQuery(new Term(LuceneConstants.PREMISE_FIELD, expTermProb.name));//this.getMultiFieldQuery(expTermProb.name);
-		// AND-Query
-		BooleanQuery.Builder qBuilder = new BooleanQuery.Builder();
-		qBuilder.add(queryTermQ, BooleanClause.Occur.MUST);
-		qBuilder.add(expTermQ, BooleanClause.Occur.MUST);
-		BooleanQuery intersectQ = qBuilder.build();
+		String[] terms = {queryTermProb.name, expTermProb.name};
 		
 		float pQueryTerm = queryTermProb.score;
 		float pExpTerm = expTermProb.score;
-		float pIntersect = this.indexSearcher.count(intersectQ) / numDocs;
+		float pIntersect = getIntersectProb(terms);
 		
-		float sim = (pIntersect/pQueryTerm) * (float)Math.pow(Math.log(1/pExpTerm), 2);//(float)Math.log(1/pExpTerm);//(float)Math.pow(Math.log(1/pExpTerm), 2);//(pIntersect/pQueryTerm); // * (float) Math.log(1/pExpTerm); //(float) Math.log(pIntersect/(pQueryTerm*pExpTerm) + 1);
+		float sim = this.termSim.apply(pQueryTerm, pExpTerm, pIntersect);
 		
 		return sim;
 	}
@@ -233,7 +256,7 @@ public class ArgumentQueryParser
 	{
 		BooleanQuery.Builder queryBuilder = new BooleanQuery.Builder();
 		float maxScore = queue.peek().score;
-		float minScore = DEFAULT_SCORE_CAP*maxScore;
+		float minScore = this.scoreCap*maxScore;
 		
 		for(BooleanClause clause : initQuery.clauses())
 		{
@@ -250,14 +273,18 @@ public class ArgumentQueryParser
 		{
 			count++;
 			termScore = queue.poll();
-			float boost = (termScore.score - minScore) / (maxScore - minScore);
-			
+			float boost;
 			
 			if(count > DEFAULT_MIN_TERMS_ADDED && termScore.score <= minScore
 					|| count > DEFAULT_MAX_TERMS_ADDED)
 				break;
 			
-			Query newQuery = this.getMultiFieldQuery(termScore.name, DEFAULT_EXPANSION_BOOST*boost);
+			if(minScore != maxScore)
+				boost = (termScore.score - minScore) / (maxScore - minScore);
+			else
+				boost = 1;
+			
+			Query newQuery = this.getMultiFieldQuery(termScore.name, this.expansionBoost*boost);
 			
 			queryBuilder.add(newQuery, BooleanClause.Occur.SHOULD);
 		}

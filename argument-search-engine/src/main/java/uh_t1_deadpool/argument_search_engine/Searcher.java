@@ -24,6 +24,7 @@ public class Searcher {
 	ArgumentQueryParser queryParser;
 	IndexSearcher indexSearcher;
 	Query query;
+	boolean queryExpansion = true;
    
 	public Searcher(String indexDirectoryPath) throws IOException
 	{
@@ -33,13 +34,16 @@ public class Searcher {
 	  this.indexSearcher = new IndexSearcher(indexReader);
 	  this.indexSearcher.setSimilarity(LuceneConstants.SIMILARITY);
 	  
-	  // TODO Custom Queryparser
 	  this.queryParser = new ArgumentQueryParser(LuceneConstants.FIELDS, new ArgumentAnalyzer(), indexSearcher, indexReader);
    }
    
 	public TopDocs search(String searchQuery) throws IOException, ParseException 
 	{
-		query = this.queryParser.parse(searchQuery); //TODO
+		if(this.queryExpansion)
+			query = this.queryParser.parse(searchQuery);
+		else
+			query = this.queryParser.simpleParse(searchQuery);
+		
 		//TODO test
 		System.out.println("Query :" + query.toString());
 		
