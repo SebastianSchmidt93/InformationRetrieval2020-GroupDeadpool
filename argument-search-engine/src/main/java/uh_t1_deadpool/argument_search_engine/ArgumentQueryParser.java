@@ -32,8 +32,8 @@ public class ArgumentQueryParser
 	/** How many of the most occurring terms will be added in all cases */
 	public static final int DEFAULT_MIN_TERMS_ADDED = 0;
 	public static final int DEFAULT_MAX_TERMS_ADDED = 100;
-	public static final float DEFAULT_SCORE_CAP = 0.9f;
-	public static final float DEFAULT_EXPANSION_BOOST = 0.2f;
+	public static final float DEFAULT_SCORE_CAP = 0.0034f;
+	public static final float DEFAULT_EXPANSION_BOOST = 0.0635f;
 	
 	/** Weighting schemes to determine relevance of term to query term */
 	public static final float CP(float pQueryTerm, float pExpTerm, float pIntersect) 
@@ -48,7 +48,7 @@ public class ArgumentQueryParser
 	public int numDocsReferenced = DEFAULT_NUM_DOCS_REFERENCED;
 	public float scoreCap = DEFAULT_SCORE_CAP;
 	public float expansionBoost = DEFAULT_EXPANSION_BOOST;
-	public TriFunction<Float, Float, Float, Float> termSim = ArgumentQueryParser::SCP2;
+	public TriFunction<Float, Float, Float, Float> termSim = ArgumentQueryParser::SCP1;
 	
 	private String[] fields;
 	private Analyzer analyzer;
@@ -112,15 +112,14 @@ public class ArgumentQueryParser
 						TermScore current = termScoreMap.get(termString);
 						if(current == null)
 						{
-							//current = new TermScore(termString, 0);
-							current = new TermScore(termString, getTermSimilarity(queryTermsProbs, termString));
+							current = new TermScore(termString, 0);
+							//current = new TermScore(termString, getTermSimilarity(queryTermsProbs, termString));
 							termScoreMap.put(termString, current);
 						}
 						// Scale with score of document to emphasize importance
-						/*
 						current.score += doc.score *
 								getScore(indexSearcher, field, current.name, terms);
-						*/
+						
 					}
 					
 					term = terms.next();
@@ -405,3 +404,4 @@ public class ArgumentQueryParser
 		
 	}
 }
+
