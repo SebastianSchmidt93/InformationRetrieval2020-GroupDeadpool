@@ -50,7 +50,7 @@ public class TrecEval
 			String line;
 			while((line = reader.readLine()) != null) 
 			{
-				String[] entries = line.split("\s");
+				String[] entries = line.split(" ");
 				String measure = entries[0];
 				int begin = line.lastIndexOf("0.");
 				int end = line.length();
