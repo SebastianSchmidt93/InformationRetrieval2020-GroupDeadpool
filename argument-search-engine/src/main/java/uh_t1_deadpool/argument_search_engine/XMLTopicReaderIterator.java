@@ -54,8 +54,8 @@ public class XMLTopicReaderIterator implements Iterator<Topic>
 		
 		topic.number = Integer.parseInt( elem.getChild("number").getValue() );
 		topic.title = elem.getChild("title").getValue();
-		topic.description = elem.getChild("description").getValue();
-		topic.narrative = elem.getChild("narrative").getValue();
+		//topic.description = elem.getChild("description").getValue();
+		//topic.narrative = elem.getChild("narrative").getValue();
 		
 		return topic;
 	}
